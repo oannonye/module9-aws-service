@@ -27,7 +27,7 @@ pipeline{
             stage('commit version update') {
                 steps {
                     script {
-                        withCredentials([usernamePassword(credentialsId: 'gitlab-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                        withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
 
                             sh 'git remote set-url origin https://$USER:$PASS@github.com/oannonye/module9-aws-service.git'
                             sh 'git add .'
