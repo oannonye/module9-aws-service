@@ -13,7 +13,6 @@ pipeline{
                         }
                     }
                 }
-
             }
             stage('Build and Push docker image') {
                 steps {
