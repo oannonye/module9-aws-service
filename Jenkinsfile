@@ -37,16 +37,6 @@ pipeline{
                     }
                 }
             }
-            stage('Skip Jenkins commits') {
-                when {
-                    expression {
-                        return !env.GIT_COMMIT_MESSAGE?.contains("[skip ci]")
-                    }
-                }
-                steps {
-                    echo "This is not a Jenkins auto-commit, exit."
-                }
-            }
 
         }
 }
