@@ -27,7 +27,6 @@ pipeline{
                 steps {
                     script {
                         withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-
                             sh 'git remote set-url origin https://$USER:$PASS@github.com/oannonye/module9-aws-service.git'
                             sh 'git add .'
                             sh 'git commit -m "skip ci"'
