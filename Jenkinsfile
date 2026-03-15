@@ -31,10 +31,20 @@ pipeline{
 
                             sh 'git remote set-url origin https://$USER:$PASS@github.com/oannonye/module9-aws-service.git'
                             sh 'git add .'
-                            sh 'git commit -m "ci: version bump"'
+                            sh 'git commit -m "skip ci"'
                             sh 'git push origin HEAD:main'
                         }
                     }
+                }
+            }
+            stage('Skip Jenkins commits') {
+                when {
+                    expression {
+                        return !env.GIT_COMMIT_MESSAGE?.contains("[skip ci]")
+                    }
+                }
+                steps {
+                    echo "This is not a Jenkins auto-commit, exit."
                 }
             }
 
