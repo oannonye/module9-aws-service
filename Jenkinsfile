@@ -37,6 +37,24 @@ pipeline{
                     }
                 }
             }
+            stage('Check Commit Message') {
+                steps {
+                    script {
+                        def commitMessage = sh(
+                            script: "git log -1 --pretty=%B",
+                            returnStdout: true
+                        ).trim()
+
+                        echo "Commit message: ${commitMessage}"
+
+                        if (commitMessage.contains("[skip ci]")) {
+                            echo "Skipping build because commit contains [skip ci]"
+                            currentBuild.result = 'SUCCESS'
+                            error("Build skipped")
+                        }
+                    }
+                }
+            }
 
         }
 }
