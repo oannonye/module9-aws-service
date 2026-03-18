@@ -1,40 +1,33 @@
-pipeline{
+#!/usr/bin.env groovy
+
+pipeline {
     agent any
-        stages {
-            stage('increament version') {
-                steps {
-                    script {
-                        dir("my-app") {
-                            sh "npm version minor -no-git-tag-version"
-                            def packageJson = readJSON file: 'package.json'
-                            def version = packageJson.version
+    stages {
+        stage("test") {
+            steps {
+                script {
+                    echo "Testing the application..."
 
-                            env.IMAGE_NAME = "$version-$BUILD_NUMBER"
-                        }
-                    }
                 }
             }
-            stage('Build and Push docker image') {
-                steps {
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', usernameVariable: 'USER', passwordVariable: 'PASS')]){
-                        sh "docker build -t onyebuchia/app-store:${IMAGE_NAME} ."
-                        sh 'echo $PASS | docker login -u $USER --password-stdin'
-                        sh "docker push onyebuchia/app-store:${IMAGE_NAME}"
-                    }
-                }
-            }
-            stage('commit version update') {
-                steps {
-                    script {
-                        withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                            sh 'git remote set-url origin https://$USER:$PASS@github.com/oannonye/module9-aws-service.git'
-                            sh 'git add .'
-                            sh 'git commit -m "skip ci"'
-                            sh 'git push origin HEAD:main'
-                        }
-                    }
-                }
-            }
-
         }
+        stage("build") {
+            steps {
+                script {
+                    echo "Building the application..."
+                }
+            }
+        }
+
+        stage("deploy") {
+            steps {
+                script {
+                    def dockerCmd = 'docker run -p 3080:3080 -d onyebuchia/app-store:jma-1.0'
+                    sshagent(['ec2-server-key']) {
+                       sh "ssh -o StrictHostKeyChecking=no ec2-user@13.40.131.215 ${dockerCmd}"
+                    }
+                }
+            }
+        }
+    }
 }
