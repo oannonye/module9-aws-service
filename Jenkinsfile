@@ -64,7 +64,7 @@ pipeline {
                         sh "git remote set-url origin https://${USER}:${PASS}@github.com/oannonye/module9-aws-service.git"
                         sh 'git add .'
                         sh 'git commit -m "ci: version bump"'
-                        sh 'git push origin HEAD:module9-aws-service.git'
+                        sh 'git push origin HEAD:module9/auto-deploy-with-docker-compose'
                     }
                 }
             }
