@@ -35,7 +35,7 @@ pipeline {
             steps {
                 script {
                     echo 'building the docker image...'
-                    buildImage(env.IMAGE_NAME)
+                    buildImage("onyebuchia/app-store:${env.IMAGE_NAME}")
                     dockerLogin()
                     dockerPush("onyebuchia/app-store:${env.IMAGE_NAME}")
                 }
