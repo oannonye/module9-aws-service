@@ -1,185 +1,170 @@
-     # CD - Deploy Application from Jenkins Pipeline to EC2 Instance (Docker-Based Deployment)
+# Create Repository on AWS and Push to Private Docker Registry (Amazon ECR)
 
-## DevOps Continuous Deployment Project
+## DevOps Container Registry Project
 
-This project demonstrates how to implement a Continuous Deployment (CD) pipeline that automatically deploys a Dockerized Java application from a Jenkins pipeline to an AWS EC2 instance using Docker Compose. The pipeline builds the application using Maven, pushes the Docker image to Docker Hub, and then remotely deploys the updated image on the EC2 server using Docker Compose. To improve maintainability, multiple remote deployment commands are extracted into a separate shell script.
+This project demonstrates how to create a private Docker registry using Amazon Elastic Container Registry (ECR) and push a Docker image to it. Amazon ECR is a fully managed container registry that makes it easy to store, manage, and deploy Docker container images securely.
 
 ---
 
 ## Technologies Used
 
-AWS  
-EC2  
-Jenkins  
-Docker
-Docker Compose
-Linux  
-Git  
-Java
-Maven
-Docker Hub
+Docker  
+Amazon ECR (Elastic Container Registry)  
+AWS CLI
 
 ---
 
 ## Project Objectives
 
-Install and configure Docker Compose on EC2 instance  
-Define multi-container deployment using docker-compose.yml  
-Automate deployment from Jenkins pipeline  
-Pull latest Docker image from Docker Hub  
-Run and update application using Docker Compose  
-Improve pipeline by extracting remote commands into shell script
+Create a private Docker repository on AWS ECR  
+Authenticate Docker with AWS ECR  
+Tag Docker image for ECR repository  
+Push Docker image to private registry  
+Verify image upload in ECR
 
 ---
 
 ## Architecture Overview
 
-Developer → Git Repository → Jenkins CI Pipeline → Docker Hub → Jenkins CD Stage → EC2 Instance → Docker Compose → Containers → Web Application
-
+Local Machine → Docker Build → AWS ECR Repository → Stored Container Image
 
 ---
 
-## Step 1: Prepare EC2 Instance for Deployment
+## Prerequisites
 
-1. Launch an EC2 instance (Amazon Linux)
-2. Configure Security Group:
-    - Allow SSH (Port 22)
-    - Allow application port (e.g., 8080)
-3. Connect to EC2:
+AWS account  
+AWS CLI installed and configured  
+Docker installed and running  
+IAM user with ECR permissions
+
+---
+
+## Step 1: Configure AWS CLI
+
+Ensure AWS CLI is configured:
 
 ```bash
-ssh -i your-key.pem ec2-user@your-ec2-public-ip
+aws configure
 ```
 
-4. Install Docker and Docker-Compose:
+Provide:
+
+Access Key  
+Secret Access Key  
+Region (e.g., eu-west-2)  
+Output format (json)
+
+Verify configuration:
 
 ```bash
-sudo yum update
-sudo yum install docker
-sudo systemctl start docker
-sudo yum install docker-compose
-
+aws sts get-caller-identity
 ```
 
-5. Add ec2-user to Docker group:
+---
+
+## Step 2: Create ECR Repository
+
+Create a new private repository:
 
 ```bash
-sudo usermod -aG docker $USER
+aws ecr create-repository \
+--repository-name my-app-repo 
+```
+
+Example output includes repository URI:
+
+```
+123456789012.dkr.ecr.eu-west-2.amazonaws.com/my-app-repo
 ```
 
 ---
 
-## Step 2: Create docker-compose.yaml file and commit to repo
+## Step 3: Build Docker Image
 
-Create a docker-compose.yaml and server-cmds.sh files which will be copied to the EC2 file by the Jenkins pipeline
-
----
-
----
-
-## Step 3: Create SSH Credentials in Jenkins
-
-1. Go to Jenkins Dashboard
-2. Navigate to:
-
-Manage Jenkins → Credentials → Global → Add Credentials
-
-3. Configure:
-
-Kind: SSH Username with private key  
-Username: ec2-user  
-Private Key: Paste contents of your `.pem` key  
-ID: ec2-ssh-key
-
-Save the credentials.
+```bash
+docker build -t my-app .
+```
 
 ---
 
-## Step 4: Configure Security Group for Jenkins Server
+## Step 4: Tag Docker Image for ECR
 
-In AWS EC2 Security Group:
+Tag the image using the ECR repository URI:
 
-Allow inbound traffic for Jenkins Server on:
-
-Port 22 → SSH  
-
+```bash
+docker tag my-app:latest 123456789012.dkr.ecr.eu-west-2.amazonaws.com/my-app-repo:latest
+```
 
 ---
 
-## Step 5: Extend Jenkins Pipeline with Deployment Stage
+## Step 5: Push Docker Image to ECR
 
-Add a deployment stage to your existing Jenkins pipeline.
+```bash
+docker push 123456789012.dkr.ecr.eu-west-2.amazonaws.com/my-app-repo:latest
+```
 
-Example Jenkinsfile:
+---
 
-```groovy
-stage("deploy") {
-    steps {
-        script {
-            echo 'deploying docker image to EC2...'
+## Step 7: Verify Image in ECR
 
-            def shellCmd = "bash ./server-cmds.sh ${IMAGE_NAME}"
-            def ec2Instance = "ec2-user@13.40.131.215"
+List images in the repository:
 
-            sshagent(['ec2-server-key']) {
-                sh "scp server-cmds.sh ${ec2Instance}:/home/ec2-user"
-                sh "scp docker-compose.yaml ${ec2Instance}:/home/ec2-user"
-                sh "ssh -o StrictHostKeyChecking=no ${ec2Instance} ${shellCmd}"
-            }
-        }
-    }
+```bash
+aws ecr list-images \
+--repository-name my-app-repo 
+```
+
+---
+
+## Workflow Summary
+
+1. Configure AWS CLI
+2. Create ECR repository
+3. Build Docker image
+4. Tag image with ECR repository URI
+5. Push image to ECR
+6. Verify image exists in repository
+
+---
+
+## Common Issues and Fixes
+
+### Invalid Security Token
+
+Ensure AWS credentials are correctly configured:
+
+```bash
+aws configure
+```
+
+---
+
+### Region Mismatch
+
+Ensure all commands use the same region:
+
+```bash
+--region eu-west-2
+```
+
+---
+
+## IAM Permissions Required
+
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "ecr:GetAuthorizationToken",
+    "ecr:BatchCheckLayerAvailability",
+    "ecr:PutImage",
+    "ecr:InitiateLayerUpload",
+    "ecr:UploadLayerPart",
+    "ecr:CompleteLayerUpload"
+  ],
+  "Resource": "*"
 }
 ```
-
----
-
-## Step 6: Deployment Process
-
-1. Developer pushes code to Git repository
-2. Jenkins builds Java application using Maven
-3. Docker image is built and pushed to Docker Hub
-4. Jenkins connects to EC2 via SSH, copies docker-compose.yaml and deployment script
-5. Deployment script is executed
-6. Docker Compose pulls latest image
-7. Existing containers are replaced with updated version
-
----
-
-## Step 7: Access Deployed Application
-
-Open browser:
-
-
-
-```
-http://your-ec2-public-ip:8080
-```
-
----
-
-## Deployment Workflow Summary
-
-Code Push → Jenkins Build → Docker Image → Docker Hub → Jenkins Deploy → EC2 → Docker Compose → Application Running
-
----
-
-## Benefits
-
-Simplifies multi-container deployments  
-Reusable deployment script improves maintainability  
-Automated end-to-end deployment  
-Easy rollback using Docker Compose  
-Cleaner and more scalable deployment approach
-
----
-
-## Security Best Practices
-
-Use SSH key authentication  
-Restrict EC2 security group ports  
-Store credentials securely in Jenkins  
-Use private Docker repositories  
-Avoid running containers as root
 
 ---
 
