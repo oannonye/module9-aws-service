@@ -52,8 +52,8 @@ pipeline {
                     def ec2Instance = "ec2-user@13.40.131.215"
 
                     sshagent(['ec2-server-key']) {
-                        sh "scp server-cmds.sh ${ec2Instance}:/home/ec2-user"
-                        sh "scp docker-compose.yaml ${ec2Instance}:/home/ec2-user"
+                        sh "scp -o StrictHostKeyChecking=no server-cmds.sh ${ec2Instance}:/home/ec2-user"
+                        sh "scp -o StrictHostKeyChecking=no docker-compose.yaml ${ec2Instance}:/home/ec2-user"
                         sh "ssh -o StrictHostKeyChecking=no ${ec2Instance} ${shellCmd}"
                     }
                 }
@@ -66,7 +66,7 @@ pipeline {
                         sh "git remote set-url origin https://${USER}:${PASS}@github.com/oannonye/module9-aws-service.git"
                         sh 'git add .'
                         sh 'git commit -m "ci: version bump"'
-                        sh 'git push origin HEAD:module9/auto-deploy-with-docker-compose'
+                        sh 'git push origin HEAD:module9/version-increment-with-docker-compose'
                     }
                 }
             }
