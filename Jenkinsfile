@@ -21,7 +21,9 @@ pipeline {
                         versions:commit'
                     def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
                     def version = matcher[0][1]
-                    env.IMAGE_NAME = "$version-$BUILD_NUMBER"
+                    def repo = 'onyebuchia/app-store'
+                    env.IMAGE_NAME = "$repo:$version-$BUILD_NUMBER"
+
                 }
             }
         }
@@ -35,9 +37,9 @@ pipeline {
             steps {
                 script {
                     echo 'building the docker image...'
-                    buildImage("onyebuchia/app-store:${env.IMAGE_NAME}")
+                    buildImage(env.IMAGE_NAME)
                     dockerLogin()
-                    dockerPush("onyebuchia/app-store:${env.IMAGE_NAME}")
+                    dockerPush(env.IMAGE_NAME)
                 }
             }
         } 
