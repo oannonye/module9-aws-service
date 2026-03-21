@@ -1,7 +1,7 @@
 
 services:
     java-maven-app:
-      image: "onyebuchia/app-store:${IMAGE}"
+      image: ${IMAGE}
       ports:
         - 8080:8080
     postgres:
