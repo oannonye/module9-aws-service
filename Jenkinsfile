@@ -11,20 +11,10 @@ pipeline {
     tools {
         maven 'maven-3.9'
     }
+    environment {
+        IMAGE_NAME = 'onyebuchia/app-store:jma-2.0'
+    }
     stages {
-        stage('increment version') {
-            steps {
-                script {
-                    echo 'incrementing app version...'
-                    sh 'mvn build-helper:parse-version versions:set \
-                        -DnewVersion=\\\${parsedVersion.majorVersion}.\\\${parsedVersion.minorVersion}.\\\${parsedVersion.nextIncrementalVersion} \
-                        versions:commit'
-                    def matcher = readFile('pom.xml') =~ '<version>(.+)</version>'
-                    def version = matcher[0][1]
-                    env.IMAGE_NAME = "$version-$BUILD_NUMBER"
-                }
-            }
-        }
         stage('build app') {
             steps {
                 echo 'building application jar...'
@@ -35,9 +25,9 @@ pipeline {
             steps {
                 script {
                     echo 'building the docker image...'
-                    buildImage("onyebuchia/app-store:${env.IMAGE_NAME}")
+                    buildImage(env.IMAGE_NAME)
                     dockerLogin()
-                    dockerPush("onyebuchia/app-store:${env.IMAGE_NAME}")
+                    dockerPush(env.IMAGE_NAME)
                 }
             }
         } 
